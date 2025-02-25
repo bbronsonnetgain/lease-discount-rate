@@ -2,14 +2,26 @@ import streamlit as st
 import requests
 import time
 
-import streamlit as st
-
 # Hide top-right buttons & collapse sidebar
 st.set_page_config(
     page_title="Lease Rate Calculator",
     page_icon="🔢",
     layout="centered",
     initial_sidebar_state="collapsed",
+)
+
+# Custom CSS to Hide Top-Right Buttons & "Manage App"
+st.markdown(
+    """
+    <style>
+        /* Hide top-right Streamlit menu */
+        header { visibility: hidden; }
+
+        /* Hide "Manage App" button */
+        .stDeployButton { display: none !important; }
+    </style>
+    """,
+    unsafe_allow_html=True,
 )
 
 # Streamlit UI
