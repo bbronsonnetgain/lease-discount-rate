@@ -62,7 +62,7 @@ term = st.number_input("Enter Lease Term (Months)", min_value=1, step=1)
 # API URL
 api_url = "https://lease-discount-rate.onrender.com/calculate"
 
-# Custom CSS for **Bigger** Full-Screen Loading Overlay
+# Custom CSS for **Smaller** Full-Screen Loading Overlay
 spinner_style = """
     <style>
         .overlay {
@@ -76,11 +76,11 @@ spinner_style = """
             z-index: 9999;
         }
         .spinner {
-            border: 12px solid rgba(255, 255, 255, 0.2); /* Increased border thickness */
-            border-top: 12px solid #3498db; /* Blue accent */
+            border: 8px solid rgba(255, 255, 255, 0.2); /* Slightly smaller border */
+            border-top: 8px solid #3498db; /* Blue accent */
             border-radius: 50%;
-            width: 160px; /* Doubled size */
-            height: 160px; /* Doubled size */
+            width: 107px; /* 33% smaller than previous */
+            height: 107px; /* 33% smaller than previous */
             animation: spin 1s linear infinite;
         }
         @keyframes spin {
