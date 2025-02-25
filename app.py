@@ -2,6 +2,16 @@ import streamlit as st
 import requests
 import time
 
+import streamlit as st
+
+# Hide top-right buttons & collapse sidebar
+st.set_page_config(
+    page_title="Lease Rate Calculator",
+    page_icon="🔢",
+    layout="centered",
+    initial_sidebar_state="collapsed",
+)
+
 # Streamlit UI
 st.title("Lease Rate Calculator")
 
