@@ -54,15 +54,15 @@ st.markdown(
 )
 
 # User Input: Date (Formats as MM/DD/YYYY)
-selected_date = st.date_input("Commencement Date", format="MM/DD/YYYY")
+selected_date = st.date_input("Select Lease Date", format="MM/DD/YYYY")
 
 # Lease Term Input
-term = st.number_input("Lease Term (Months)", min_value=1, step=1)
+term = st.number_input("Enter Lease Term (Months)", min_value=1, step=1)
 
 # API URL
 api_url = "https://lease-discount-rate.onrender.com/calculate"
 
-# Custom CSS for Full-Screen Loading Overlay
+# Custom CSS for **Bigger** Full-Screen Loading Overlay
 spinner_style = """
     <style>
         .overlay {
@@ -76,11 +76,11 @@ spinner_style = """
             z-index: 9999;
         }
         .spinner {
-            border: 6px solid rgba(255, 255, 255, 0.2);
-            border-top: 6px solid #3498db;
+            border: 12px solid rgba(255, 255, 255, 0.2); /* Increased border thickness */
+            border-top: 12px solid #3498db; /* Blue accent */
             border-radius: 50%;
-            width: 80px;
-            height: 80px;
+            width: 160px; /* Doubled size */
+            height: 160px; /* Doubled size */
             animation: spin 1s linear infinite;
         }
         @keyframes spin {
