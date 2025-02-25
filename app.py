@@ -54,10 +54,10 @@ st.markdown(
 )
 
 # User Input: Date (Formats as MM/DD/YYYY)
-selected_date = st.date_input("Select Lease Date", format="MM/DD/YYYY")
+selected_date = st.date_input("Commencement Date", format="MM/DD/YYYY")
 
 # Lease Term Input
-term = st.number_input("Enter Lease Term (Months)", min_value=1, step=1)
+term = st.number_input("Lease Term (Months)", min_value=1, step=1)
 
 # API URL
 api_url = "https://lease-discount-rate.onrender.com/calculate"
