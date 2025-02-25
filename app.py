@@ -38,7 +38,7 @@ selected_date = st.date_input("Select Lease Date", format="MM/DD/YYYY")
 term = st.number_input("Enter Lease Term (Months)", min_value=1, step=1)
 
 # API URL
-api_url = "http://127.0.0.1:8000/calculate"
+api_url = "https://lease-discount-rate.onrender.com/calculate"
 
 # Custom CSS for Full-Screen Loading Overlay
 spinner_style = """
