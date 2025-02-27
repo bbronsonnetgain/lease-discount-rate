@@ -12,10 +12,10 @@ AUDIT_LOG_FILE = "audit_log.csv"
 
 # Mapping Treasury terms to user-friendly labels (for Rate Calculation Formula only)
 TREASURY_LABELS = {
-    "BC_1MONTH": "1 Mo", "BC_3MONTH": "3 Mo", "BC_6MONTH": "6 Mo",
-    "BC_1YEAR": "1 Yr", "BC_2YEAR": "2 Yr", "BC_3YEAR": "3 Yr",
-    "BC_5YEAR": "5 Yr", "BC_7YEAR": "7 Yr", "BC_10YEAR": "10 Yr",
-    "BC_20YEAR": "20 Yr", "BC_30YEAR": "30 Yr"
+    "BC_1MONTH": "1 Month", "BC_3MONTH": "3 Months", "BC_6MONTH": "6 Months",
+    "BC_1YEAR": "1 Year", "BC_2YEAR": "2 Years", "BC_3YEAR": "3 Years",
+    "BC_5YEAR": "5 Years", "BC_7YEAR": "7 Years", "BC_10YEAR": "10 Years",
+    "BC_20YEAR": "20 Years", "BC_30YEAR": "30 Years"
 }
 
 # Treasury API Fetch Function
