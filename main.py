@@ -22,42 +22,47 @@ TREASURY_LABELS = {
     "BC_20YEAR": "20 years", "BC_30YEAR": "30 years"
 }
 
-# Treasury API Fetch Function
-def fetch_treasury_data(year: int):
-    url = f"https://home.treasury.gov/resource-center/data-chart-center/interest-rates/pages/xmlview?data=daily_treasury_yield_curve&field_tdr_date_value={year}"
-    response = requests.get(url)
-
-    if response.status_code != 200:
-        return None
-
-    soup = BeautifulSoup(response.content, "xml")
-    entries = soup.find_all("entry")
-
+# Treasury API Fetch Function (Now Fetching Multiple Years)
+def fetch_treasury_data():
     treasury_data = {}
-    for entry in entries:
-        date_tag = entry.find("d:NEW_DATE")
-        if date_tag:
-            date_str = date_tag.text[:10]  # Extract YYYY-MM-DD
-            treasury_data[date_str] = {
-                "BC_1MONTH": entry.find("d:BC_1MONTH"),
-                "BC_3MONTH": entry.find("d:BC_3MONTH"),
-                "BC_6MONTH": entry.find("d:BC_6MONTH"),
-                "BC_1YEAR": entry.find("d:BC_1YEAR"),
-                "BC_2YEAR": entry.find("d:BC_2YEAR"),
-                "BC_3YEAR": entry.find("d:BC_3YEAR"),
-                "BC_5YEAR": entry.find("d:BC_5YEAR"),
-                "BC_7YEAR": entry.find("d:BC_7YEAR"),
-                "BC_10YEAR": entry.find("d:BC_10YEAR"),
-                "BC_20YEAR": entry.find("d:BC_20YEAR"),
-                "BC_30YEAR": entry.find("d:BC_30YEAR"),
-            }
 
-            # Convert values to float
-            for key, value in treasury_data[date_str].items():
-                if value and value.text:
-                    treasury_data[date_str][key] = float(value.text)
-                else:
-                    treasury_data[date_str][key] = None
+    # Fetch last 10 years of data
+    current_year = datetime.today().year
+    for year in range(current_year, current_year - 20, -1):  # Last 10 years
+        url = f"https://home.treasury.gov/resource-center/data-chart-center/interest-rates/pages/xmlview?data=daily_treasury_yield_curve&field_tdr_date_value={year}"
+        response = requests.get(url)
+
+        if response.status_code != 200:
+            print(f"❌ Failed to fetch data for {year}")
+            continue  # Skip to next year if this fails
+
+        soup = BeautifulSoup(response.content, "xml")
+        entries = soup.find_all("entry")
+
+        for entry in entries:
+            date_tag = entry.find("d:NEW_DATE")
+            if date_tag:
+                date_str = date_tag.text[:10]  # Extract YYYY-MM-DD
+                treasury_data[date_str] = {
+                    "BC_1MONTH": entry.find("d:BC_1MONTH"),
+                    "BC_3MONTH": entry.find("d:BC_3MONTH"),
+                    "BC_6MONTH": entry.find("d:BC_6MONTH"),
+                    "BC_1YEAR": entry.find("d:BC_1YEAR"),
+                    "BC_2YEAR": entry.find("d:BC_2YEAR"),
+                    "BC_3YEAR": entry.find("d:BC_3YEAR"),
+                    "BC_5YEAR": entry.find("d:BC_5YEAR"),
+                    "BC_7YEAR": entry.find("d:BC_7YEAR"),
+                    "BC_10YEAR": entry.find("d:BC_10YEAR"),
+                    "BC_20YEAR": entry.find("d:BC_20YEAR"),
+                    "BC_30YEAR": entry.find("d:BC_30YEAR"),
+                }
+
+                # Convert values to float
+                for key, value in treasury_data[date_str].items():
+                    if value and value.text:
+                        treasury_data[date_str][key] = float(value.text)
+                    else:
+                        treasury_data[date_str][key] = None
 
     return treasury_data
 
@@ -68,19 +73,24 @@ def load_cached_treasury_data():
             return json.load(file)
     return None
 
-# **🔹 Function to Update Cache (Runs Every Hour)**
+# Function to Update Cache (Runs Every Hour)
 def update_treasury_cache():
     while True:
-        today = datetime.today().strftime("%Y-%m-%d")
-        year = int(today[:4])
+        # Load existing data if it exists
+        cached_data = load_cached_treasury_data() or {}
 
-        # Fetch new data
-        new_data = fetch_treasury_data(year)
+        # Fetch all years (not just the latest year)
+        new_data = fetch_treasury_data()
 
         if new_data:
+            # Merge new data with old cached data
+            cached_data.update(new_data)
+
+            # Save updated data back to cache
             with open(CACHE_FILE, "w") as file:
-                json.dump(new_data, file)
-            print(f"✅ Treasury Data Updated: {today}")
+                json.dump(cached_data, file)
+            print(f"✅ Treasury Data Updated: {datetime.today().strftime('%Y-%m-%d')}")
+
         else:
             print("❌ Failed to update Treasury Data")
 
@@ -135,7 +145,7 @@ def get_lease_rate_for_term(treasury_data, term):
     # **Handle cases where only one bound exists**
     if shorter_term is None:
         friendly_label = TREASURY_LABELS.get(term_mapping[longer_term], term_mapping[longer_term])
-        return available_terms[term_mapping[longer_term]], f"Closest match found: {friendly_label}"
+        return available_terms[term_mapping[longer_term]], f"Closest match found: {friendly_label}"Ma
     if longer_term is None:
         friendly_label = TREASURY_LABELS.get(term_mapping[shorter_term], term_mapping[shorter_term])
         return available_terms[term_mapping[shorter_term]], f"Closest match found: {friendly_label}"
