@@ -69,8 +69,12 @@ def fetch_treasury_data():
 # **🔹 Function to Load Cached Data**
 def load_cached_treasury_data():
     if os.path.exists(CACHE_FILE):
-        with open(CACHE_FILE, "r") as file:
-            return json.load(file)
+        try:
+            with open(CACHE_FILE, "r") as file:
+                return json.load(file)
+        except json.JSONDecodeError:
+            print(⚠️ Cache file corrupted. Fetching fresh data...")
+            return None  # Forces a fresh data fetch if cache is corrupt
     return None
 
 # Function to Update Cache (Runs Every Hour)
@@ -87,8 +91,8 @@ def update_treasury_cache():
             cached_data.update(new_data)
 
             # Save updated data back to cache
-            with open(CACHE_FILE, "w") as file:
-                json.dump(cached_data, file)
+		with open(CACHE_FILE, "w") as file:
+    		json.dump(cached_data, file, indent=4)  # Pretty-print JSON for debugging
             print(f"✅ Treasury Data Updated: {datetime.today().strftime('%Y-%m-%d')}")
 
         else:
@@ -155,7 +159,13 @@ def get_lease_rate_for_term(treasury_data, term):
     longer_rate = available_terms[term_mapping[longer_term]]
     interpolated_rate = (((longer_rate - shorter_rate) / (longer_term - shorter_term)) * (term - shorter_term)) + shorter_rate
 
-    return interpolated_rate
+    # Convert Treasury terms to user-friendly labels for formula output
+    short_label = TREASURY_LABELS.get(term_mapping[shorter_term], term_mapping[shorter_term])
+    long_label = TREASURY_LABELS.get(term_mapping[longer_term], term_mapping[longer_term])
+
+    calculation_formula = f"(({longer_rate} - {shorter_rate}) / ({longer_term} - {shorter_term})) * ({term} - {shorter_term}) + {shorter_rate}"
+
+    return interpolated_rate, calculation_formula
 
 # **🔹 API Endpoint**
 @app.get("/calculate")
