@@ -51,7 +51,7 @@ def load_cached_treasury_data():
             with open(CACHE_FILE, "r") as file:
                 return json.load(file)
         except json.JSONDecodeError:
-            print(⚠️ Cache file corrupted. Fetching fresh data...")
+            print("Cache file corrupted. Fetching fresh data...")
             return None
     return None
 
