@@ -34,6 +34,13 @@ st.markdown(
             text-align: left !important;
         }
 
+        /* Style labels for input fields (Ensure same font size as results) */
+        label {
+            font-size: 18px !important;
+            font-weight: bold;
+            font-family: 'Poppins', sans-serif;
+        }
+
         /* Style the Get Lease Rate button */
         div.stButton > button {
             background-color: #1E3A8A !important;
@@ -64,6 +71,13 @@ st.markdown(
             font-weight: bold;
             color: black !important;
         }
+
+        /* Ensure all result text matches input labels */
+        .result-box p {
+            font-size: 18px !important;
+            font-family: 'Poppins', sans-serif;
+        }
+
     </style>
     """,
     unsafe_allow_html=True,
