@@ -60,6 +60,25 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
+# Custom CSS to Hide Top-Right Buttons, "Manage App," and Bottom-Right Icons
+st.markdown(
+    """
+    <style>
+        /* Hide top-right Streamlit menu */
+        header { visibility: hidden; }
+
+        /* Hide "Manage App" button */
+        .stDeployButton { display: none !important; }
+
+        /* Hide bottom-right icons (Streamlit branding) */
+        .viewerBadge_container__1QSob { display: none !important; }
+        #MainMenu { visibility: hidden; }
+        footer { visibility: hidden; }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
 # Streamlit UI
 st.title("Lease Rate Calculator")
 
