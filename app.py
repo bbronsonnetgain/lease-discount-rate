@@ -15,6 +15,14 @@ st.set_page_config(
 st.markdown(
     """
     <style>
+        /* Import Poppins Font */
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap');
+
+        /* Apply Poppins font globally */
+        html, body, [class*="st-"] {
+            font-family: 'Poppins', sans-serif;
+        }
+
         /* Hide top-right Streamlit menu */
         header { visibility: hidden; }
 
@@ -35,6 +43,7 @@ st.markdown(
             padding: 8px 20px;
             border-radius: 8px;
             border: none;
+            font-family: 'Poppins', sans-serif;
         }
         div.stButton > button:hover {
             background-color: #1E40AF !important;
@@ -49,28 +58,22 @@ st.markdown(
             margin-top: 15px;
         }
 
-        /* Bold lease rate */
+        /* Lease Rate Styling - Changed to Black */
         .lease-rate {
             font-size: 22px;
             font-weight: bold;
-            color: #155724;
+            color: black !important;
         }
     </style>
     """,
     unsafe_allow_html=True,
 )
 
-# Custom CSS to Hide Top-Right Buttons, "Manage App," and Bottom-Right Icons
+# Custom CSS to Hide Bottom-Right Icons (Streamlit Branding)
 st.markdown(
     """
     <style>
-        /* Hide top-right Streamlit menu */
-        header { visibility: hidden; }
-
-        /* Hide "Manage App" button */
-        .stDeployButton { display: none !important; }
-
-        /* Hide bottom-right icons (Streamlit branding) */
+        /* Hide bottom-right icons */
         .viewerBadge_container__1QSob { display: none !important; }
         #MainMenu { visibility: hidden; }
         footer { visibility: hidden; }
