@@ -29,13 +29,8 @@ st.markdown(
         /* Hide "Manage App" button */
         .stDeployButton { display: none !important; }
 
-        /* Style input fields */
-        div[data-baseweb="input"] {
-            text-align: left !important;
-        }
-
-        /* Style labels for input fields (Ensure same font size as results) */
-        label {
+        /* Style input field labels */
+        .st-emotion-cache-10trblm {
             font-size: 18px !important;
             font-weight: bold;
             font-family: 'Poppins', sans-serif;
@@ -45,7 +40,7 @@ st.markdown(
         div.stButton > button {
             background-color: #1E3A8A !important;
             color: white !important;
-            font-size: 16px;
+            font-size: 18px;
             font-weight: bold;
             padding: 8px 20px;
             border-radius: 8px;
@@ -97,7 +92,7 @@ st.markdown(
 )
 
 # Streamlit UI
-st.title("Lease Rate Calculator")
+st.markdown("<h1 style='text-align: center;'>Lease Rate Calculator</h1>", unsafe_allow_html=True)
 
 # User Input: Date (Formats as MM/DD/YYYY)
 selected_date = st.date_input("Commencement Date", format="MM/DD/YYYY")

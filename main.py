@@ -155,7 +155,7 @@ def get_lease_rate_for_term(treasury_data, term):
     longer_rate = available_terms[term_mapping[longer_term]]
     interpolated_rate = (((longer_rate - shorter_rate) / (longer_term - shorter_term)) * (term - shorter_term)) + shorter_rate
 
-    return interpolated_rate, "Interpolated Rate"
+    return interpolated_rate
 
 # **🔹 API Endpoint**
 @app.get("/calculate")
