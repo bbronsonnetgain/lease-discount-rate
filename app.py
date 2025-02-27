@@ -40,7 +40,7 @@ st.markdown(
         div.stButton > button {
             background-color: #1E3A8A !important;
             color: white !important;
-            font-size: 18px;
+            font-size: 16px;
             font-weight: bold;
             padding: 8px 20px;
             border-radius: 8px;
@@ -62,7 +62,7 @@ st.markdown(
 
         /* Lease Rate Styling - Changed to Black */
         .lease-rate {
-            font-size: 22px;
+            font-size: 16px;
             font-weight: bold;
             color: black !important;
         }
