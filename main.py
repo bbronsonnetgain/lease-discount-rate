@@ -145,7 +145,7 @@ def get_lease_rate_for_term(treasury_data, term):
     # **Handle cases where only one bound exists**
     if shorter_term is None:
         friendly_label = TREASURY_LABELS.get(term_mapping[longer_term], term_mapping[longer_term])
-        return available_terms[term_mapping[longer_term]], f"Closest match found: {friendly_label}"Ma
+        return available_terms[term_mapping[longer_term]], f"Closest match found: {friendly_label}"
     if longer_term is None:
         friendly_label = TREASURY_LABELS.get(term_mapping[shorter_term], term_mapping[shorter_term])
         return available_terms[term_mapping[shorter_term]], f"Closest match found: {friendly_label}"
