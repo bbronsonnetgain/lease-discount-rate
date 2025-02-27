@@ -2,8 +2,13 @@ from fastapi import FastAPI, Query, HTTPException
 import requests
 from bs4 import BeautifulSoup
 from datetime import datetime, timedelta
+import csv
+import os
 
 app = FastAPI()
+
+# Define Audit Log File
+AUDIT_LOG_FILE = "audit_log.csv"
 
 # Treasury API Fetch Function
 def get_treasury_data(year: int):
@@ -41,7 +46,7 @@ def get_treasury_data(year: int):
 
     return treasury_data
 
-# **🔹 Function to Find Most Recent Valid Date**
+# Function to Find Most Recent Valid Date
 def get_most_recent_date(requested_date: str):
     year = int(requested_date[:4])
     treasury_data = get_treasury_data(year)
@@ -56,14 +61,14 @@ def get_most_recent_date(requested_date: str):
     # Convert date to datetime object
     req_date = datetime.strptime(requested_date, "%Y-%m-%d")
 
-    # **Find the most recent available date before or on requested_date**
+    # **Find the most recent available date BEFORE OR ON requested_date**
     available_dates = sorted(treasury_data.keys(), reverse=True)
     for date in available_dates:
         date_obj = datetime.strptime(date, "%Y-%m-%d")
         if date_obj <= req_date:
             return date, treasury_data[date]
 
-    # **If no date found in the current year, check prior years**
+    # **If no date found in the current year, check previous years**
     for past_year in range(year - 1, 2000, -1):  # Avoid infinite loops
         treasury_data_prev = get_treasury_data(past_year)
         if treasury_data_prev:
@@ -75,40 +80,43 @@ def get_most_recent_date(requested_date: str):
 
     raise HTTPException(status_code=404, detail="No valid Treasury data found for the given date.")
 
-# **🔹 Function to Find the Correct Term with Interpolation**
+# Function to Find the Correct Term with Interpolation
 def get_lease_rate_for_term(treasury_data, term):
     term_years = term / 12  # Convert months to years
     available_terms = sorted([t for t in treasury_data.keys() if treasury_data[t] is not None])
 
-    # **Exact match? Return rate**
+    # Exact match? Return rate directly
     if term_years in available_terms:
-        return treasury_data[term_years]
+        return treasury_data[term_years], f"Exact match: {treasury_data[term_years]}% for {term_years} years"
 
-    # **Find two closest terms**
+    # Find two closest terms
     shorter_term = max([t for t in available_terms if t < term_years], default=None)
     longer_term = min([t for t in available_terms if t > term_years], default=None)
 
-    # **If only one bound is found, return the closest rate**
+    # If only one bound is found, return the closest rate
     if shorter_term is None:
-        return treasury_data[longer_term]
+        return treasury_data[longer_term], f"Closest match: {treasury_data[longer_term]}% for {longer_term} years"
     if longer_term is None:
-        return treasury_data[shorter_term]
+        return treasury_data[shorter_term], f"Closest match: {treasury_data[shorter_term]}% for {shorter_term} years"
 
-    # **Apply Interpolation Formula**
+    # Apply Interpolation Formula
     shorter_rate = treasury_data[shorter_term]
     longer_rate = treasury_data[longer_term]
     interpolated_rate = (((longer_rate - shorter_rate) / (longer_term - shorter_term)) * (term_years - shorter_term)) + shorter_rate
 
-    return interpolated_rate
+    calculation_formula = f"(({longer_rate} - {shorter_rate}) / ({longer_term} - {shorter_term})) * ({term_years} - {shorter_term}) + {shorter_rate}"
 
-# **🔹 API Endpoint**
+    return interpolated_rate, calculation_formula
+
+# API Endpoint
 @app.get("/calculate")
 def get_lease_rate(date: str = Query(..., description="Lease date (YYYY-MM-DD)"), term: int = Query(..., description="Lease term in months")):
     recent_date, treasury_data = get_most_recent_date(date)
-    lease_rate = get_lease_rate_for_term(treasury_data, term)
+    lease_rate, calculation = get_lease_rate_for_term(treasury_data, term)
 
     return {
         "date": recent_date,
         "term": term,
-        "lease_rate": lease_rate
+        "lease_rate": lease_rate,
+        "calculation": calculation  # Sends formula to Streamlit
     }
