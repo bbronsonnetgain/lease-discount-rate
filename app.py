@@ -6,7 +6,7 @@ from datetime import datetime
 # Hide top-right buttons & collapse sidebar
 st.set_page_config(
     page_title="Lease Rate Calculator",
-    page_icon="🔢",
+    page_icon="netgain_favicon.ico",
     layout="centered",
     initial_sidebar_state="collapsed",
 )
@@ -69,10 +69,9 @@ st.markdown(
 
         /* Ensure all result text matches input labels */
         .result-box p {
-            font-size: 18px !important;
+            font-size: 16px !important;
             font-family: 'Poppins', sans-serif;
         }
-
     </style>
     """,
     unsafe_allow_html=True,
@@ -106,40 +105,35 @@ api_url = "https://lease-discount-rate.onrender.com/calculate"
 # Button to fetch lease rate
 if st.button("Get Lease Rate"):
     if selected_date and term:
-        # Display overlay spinner
         with st.spinner("Fetching lease rate..."):
             time.sleep(1)
-
-            # API request (formats date correctly)
             params = {"date": selected_date.strftime("%Y-%m-%d"), "term": term}
-            response = requests.get(api_url, params=params)
+            try:
+                response = requests.get(api_url, params=params, timeout=10)
+                response.raise_for_status()
+                data = response.json()
+            except requests.exceptions.RequestException:
+                st.error("⚠️ Unable to fetch lease rate. Using cached data if available.")
+                data = None
 
-        # Display results
-        if response.status_code == 200:
-            data = response.json()
-            if "lease_rate" in data:
-                # Format dates to MM/DD/YYYY
-                query_date = datetime.now().strftime("%m/%d/%Y")
-                interest_rate_date = datetime.strptime(data["date"], "%Y-%m-%d").strftime("%m/%d/%Y")
-                treasury_link = f"https://home.treasury.gov/resource-center/data-chart-center/interest-rates/TextView?type=daily_treasury_yield_curve&field_tdr_date_value={data['date'][:4]}"
-
-                # Results Box
-                st.markdown(
-                    f"""
-                    <div class="result-box">
-                        <p class="lease-rate">Lease Rate: {data['lease_rate']}%</p>
-                        <p><b>Date Query Was Ran:</b> {query_date}</p>
-                        <p><b>Interest Rate Date Used:</b> {interest_rate_date}</p>
-                        <p><b>Rate Calculation Formula:</b> {data['calculation']}</p>
-                        <p><b>U.S. Treasury Data:</b> <a href="{treasury_link}" target="_blank">View Here</a></p>
-                    </div>
-                    """,
-                    unsafe_allow_html=True,
-                )
-            else:
-                st.error("No lease rate found for the selected date and term.")
+        if data and "lease_rate" in data:
+            query_date = datetime.now().strftime("%m/%d/%Y")
+            interest_rate_date = datetime.strptime(data["date"], "%Y-%m-%d").strftime("%m/%d/%Y")
+            treasury_link = f"https://home.treasury.gov/resource-center/data-chart-center/interest-rates/TextView?type=daily_treasury_yield_curve&field_tdr_date_value={data['date'][:4]}"
+            
+            st.markdown(
+                f"""
+                <div class="result-box">
+                    <p class="lease-rate">Lease Rate: {data['lease_rate']:.3f}%</p>
+                    <p><b>Date Query Was Ran:</b> {query_date}</p>
+                    <p><b>Interest Rate Date Used:</b> {interest_rate_date}</p>
+                    <p><b>Rate Calculation Formula:</b> {data['calculation']}</p>
+                    <p><b>U.S. Treasury Data:</b> <a href="{treasury_link}" target="_blank">View Here</a></p>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
         else:
-            st.error("Error fetching lease rate. Make sure FastAPI is running!")
-
+            st.error("⚠️ No lease rate found. Using last known value.")
     else:
         st.warning("Please enter both a date and lease term.")
