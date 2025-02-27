@@ -1,25 +1,29 @@
-from fastapi import FastAPI, Query, HTTPException
+from fastapi import FastAPI, Query, HTTPException, BackgroundTasks
 import requests
 from bs4 import BeautifulSoup
 from datetime import datetime, timedelta
 import csv
 import os
+import json
+import threading
+import time
 
 app = FastAPI()
 
-# Define Audit Log File
+# Define paths for cache & logs
+CACHE_FILE = "treasury_data.json"
 AUDIT_LOG_FILE = "audit_log.csv"
 
 # Mapping Treasury terms to user-friendly labels (for Rate Calculation Formula only)
 TREASURY_LABELS = {
-    "BC_1MONTH": "1 Month", "BC_3MONTH": "3 Months", "BC_6MONTH": "6 Months",
-    "BC_1YEAR": "1 Year", "BC_2YEAR": "2 Years", "BC_3YEAR": "3 Years",
-    "BC_5YEAR": "5 Years", "BC_7YEAR": "7 Years", "BC_10YEAR": "10 Years",
-    "BC_20YEAR": "20 Years", "BC_30YEAR": "30 Years"
+    "BC_1MONTH": "1 month", "BC_3MONTH": "3 months", "BC_6MONTH": "6 months",
+    "BC_1YEAR": "1 year", "BC_2YEAR": "2 years", "BC_3YEAR": "3 years",
+    "BC_5YEAR": "5 years", "BC_7YEAR": "7 years", "BC_10YEAR": "10 years",
+    "BC_20YEAR": "20 years", "BC_30YEAR": "30 years"
 }
 
 # Treasury API Fetch Function
-def get_treasury_data(year: int):
+def fetch_treasury_data(year: int):
     url = f"https://home.treasury.gov/resource-center/data-chart-center/interest-rates/pages/xmlview?data=daily_treasury_yield_curve&field_tdr_date_value={year}"
     response = requests.get(url)
 
@@ -48,7 +52,7 @@ def get_treasury_data(year: int):
                 "BC_30YEAR": entry.find("d:BC_30YEAR"),
             }
 
-            # Convert data to float
+            # Convert values to float
             for key, value in treasury_data[date_str].items():
                 if value and value.text:
                     treasury_data[date_str][key] = float(value.text)
@@ -57,43 +61,55 @@ def get_treasury_data(year: int):
 
     return treasury_data
 
-# Find Most Recent Valid Treasury Date
+# **🔹 Function to Load Cached Data**
+def load_cached_treasury_data():
+    if os.path.exists(CACHE_FILE):
+        with open(CACHE_FILE, "r") as file:
+            return json.load(file)
+    return None
+
+# **🔹 Function to Update Cache (Runs Every Hour)**
+def update_treasury_cache():
+    while True:
+        today = datetime.today().strftime("%Y-%m-%d")
+        year = int(today[:4])
+
+        # Fetch new data
+        new_data = fetch_treasury_data(year)
+
+        if new_data:
+            with open(CACHE_FILE, "w") as file:
+                json.dump(new_data, file)
+            print(f"✅ Treasury Data Updated: {today}")
+        else:
+            print("❌ Failed to update Treasury Data")
+
+        time.sleep(3600)  # **Wait 1 hour before next update**
+
+# **🔹 Start the Background Caching Task**
+def start_cache_updater():
+    thread = threading.Thread(target=update_treasury_cache, daemon=True)
+    thread.start()
+
+# **🔹 Function to Get Most Recent Treasury Data**
 def get_most_recent_date(requested_date: str):
-    year = int(requested_date[:4])
-    treasury_data = get_treasury_data(year)
-
-    # If no data in current year, check previous year
-    if not treasury_data:
-        treasury_data = get_treasury_data(year - 1)
+    treasury_data = load_cached_treasury_data()
 
     if not treasury_data:
-        raise HTTPException(status_code=404, detail="No valid Treasury data found for the given date.")
+        raise HTTPException(status_code=404, detail="No cached Treasury data found. Try again later.")
 
-    # Convert requested date to datetime object
     req_date = datetime.strptime(requested_date, "%Y-%m-%d")
-
-    # Find the most recent available date before or on requested_date
     available_dates = sorted(treasury_data.keys(), reverse=True)
+
     for date in available_dates:
         date_obj = datetime.strptime(date, "%Y-%m-%d")
         if date_obj <= req_date:
             return date, treasury_data[date]
 
-    # If no date found, check prior years
-    for past_year in range(year - 1, 2000, -1):  # Prevent infinite loops
-        treasury_data_prev = get_treasury_data(past_year)
-        if treasury_data_prev:
-            available_dates_prev = sorted(treasury_data_prev.keys(), reverse=True)
-            for date in available_dates_prev:
-                date_obj = datetime.strptime(date, "%Y-%m-%d")
-                if date_obj <= req_date:
-                    return date, treasury_data_prev[date]
-
     raise HTTPException(status_code=404, detail="No valid Treasury data found for the given date.")
 
-# Convert months into corresponding U.S. Treasury column names
+# **🔹 Function to Get Lease Rate**
 def get_lease_rate_for_term(treasury_data, term):
-    # Mapping lease terms (in months) to U.S. Treasury column names
     term_mapping = {
         1: "BC_1MONTH", 3: "BC_3MONTH", 6: "BC_6MONTH",
         12: "BC_1YEAR", 24: "BC_2YEAR", 36: "BC_3YEAR",
@@ -101,7 +117,6 @@ def get_lease_rate_for_term(treasury_data, term):
         240: "BC_20YEAR", 360: "BC_30YEAR"
     }
 
-    # Extract available terms in treasury data (ignoring None values)
     available_terms = {key: value for key, value in treasury_data.items() if value is not None}
 
     # **Exact match case**
@@ -130,40 +145,13 @@ def get_lease_rate_for_term(treasury_data, term):
     longer_rate = available_terms[term_mapping[longer_term]]
     interpolated_rate = (((longer_rate - shorter_rate) / (longer_term - shorter_term)) * (term - shorter_term)) + shorter_rate
 
-    # Convert Treasury terms to user-friendly labels for formula output
-    short_label = TREASURY_LABELS.get(term_mapping[shorter_term], term_mapping[shorter_term])
-    long_label = TREASURY_LABELS.get(term_mapping[longer_term], term_mapping[longer_term])
+    return interpolated_rate, "Interpolated Rate"
 
-    calculation_formula = f"(({longer_rate} - {shorter_rate}) / ({long_label} - {short_label})) * ({term} - {short_label}) + {shorter_rate}"
-
-    return interpolated_rate, calculation_formula
-
-# Audit Log Function
-def log_audit_entry(query_date, rate_date, term, lease_rate, calculation):
-    log_entry = {
-        "Date Query Was Ran": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-        "Interest Rate Date": rate_date,
-        "Rate Calculation": calculation,
-        "Lease Rate (%)": f"{lease_rate:.2f}%",
-        "U.S. Treasury Table": f"https://home.treasury.gov/resource-center/data-chart-center/interest-rates/TextView?type=daily_treasury_yield_curve&field_tdr_date_value={rate_date[:4]}",
-    }
-
-    file_exists = os.path.isfile(AUDIT_LOG_FILE)
-
-    with open(AUDIT_LOG_FILE, mode="a", newline="") as file:
-        writer = csv.DictWriter(file, fieldnames=log_entry.keys())
-
-        if not file_exists:
-            writer.writeheader()
-        writer.writerow(log_entry)
-
-# API Endpoint
+# **🔹 API Endpoint**
 @app.get("/calculate")
 def get_lease_rate(date: str = Query(..., description="Lease date (YYYY-MM-DD)"), term: int = Query(..., description="Lease term in months")):
     recent_date, treasury_data = get_most_recent_date(date)
     lease_rate, calculation = get_lease_rate_for_term(treasury_data, term)
-
-    log_audit_entry(datetime.now().strftime("%Y-%m-%d"), recent_date, term, lease_rate, calculation)
 
     return {
         "date": recent_date,
@@ -171,3 +159,6 @@ def get_lease_rate(date: str = Query(..., description="Lease date (YYYY-MM-DD)")
         "lease_rate": lease_rate,
         "calculation": calculation
     }
+
+# **🔹 Start Cache Updating Task on Startup**
+start_cache_updater()
