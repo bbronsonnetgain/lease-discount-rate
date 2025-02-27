@@ -10,6 +10,14 @@ app = FastAPI()
 # Define Audit Log File
 AUDIT_LOG_FILE = "audit_log.csv"
 
+# Mapping Treasury terms to user-friendly labels (for Rate Calculation Formula only)
+TREASURY_LABELS = {
+    "BC_1MONTH": "1 Mo", "BC_3MONTH": "3 Mo", "BC_6MONTH": "6 Mo",
+    "BC_1YEAR": "1 Yr", "BC_2YEAR": "2 Yr", "BC_3YEAR": "3 Yr",
+    "BC_5YEAR": "5 Yr", "BC_7YEAR": "7 Yr", "BC_10YEAR": "10 Yr",
+    "BC_20YEAR": "20 Yr", "BC_30YEAR": "30 Yr"
+}
+
 # Treasury API Fetch Function
 def get_treasury_data(year: int):
     url = f"https://home.treasury.gov/resource-center/data-chart-center/interest-rates/pages/xmlview?data=daily_treasury_yield_curve&field_tdr_date_value={year}"
@@ -96,11 +104,12 @@ def get_lease_rate_for_term(treasury_data, term):
     # Extract available terms in treasury data (ignoring None values)
     available_terms = {key: value for key, value in treasury_data.items() if value is not None}
 
-    # Exact match case
+    # **Exact match case**
     if term in term_mapping and term_mapping[term] in available_terms:
-        return available_terms[term_mapping[term]], f"Exact match found for {term_mapping[term]}"
+        friendly_label = TREASURY_LABELS.get(term_mapping[term], term_mapping[term])  # Convert to user-friendly format
+        return available_terms[term_mapping[term]], f"Exact match found for {friendly_label}"
 
-    # Find closest shorter and longer term
+    # **Find closest shorter and longer term**
     shorter_term = max(
         [t for t in term_mapping.keys() if t < term and term_mapping[t] in available_terms], default=None
     )
@@ -108,18 +117,24 @@ def get_lease_rate_for_term(treasury_data, term):
         [t for t in term_mapping.keys() if t > term and term_mapping[t] in available_terms], default=None
     )
 
-    # Handle edge cases where only one bound is available
+    # **Handle cases where only one bound exists**
     if shorter_term is None:
-        return available_terms[term_mapping[longer_term]], f"Closest match found: {term_mapping[longer_term]}"
+        friendly_label = TREASURY_LABELS.get(term_mapping[longer_term], term_mapping[longer_term])
+        return available_terms[term_mapping[longer_term]], f"Closest match found: {friendly_label}"
     if longer_term is None:
-        return available_terms[term_mapping[shorter_term]], f"Closest match found: {term_mapping[shorter_term]}"
+        friendly_label = TREASURY_LABELS.get(term_mapping[shorter_term], term_mapping[shorter_term])
+        return available_terms[term_mapping[shorter_term]], f"Closest match found: {friendly_label}"
 
-    # Apply Interpolation Formula
+    # **Apply Interpolation**
     shorter_rate = available_terms[term_mapping[shorter_term]]
     longer_rate = available_terms[term_mapping[longer_term]]
     interpolated_rate = (((longer_rate - shorter_rate) / (longer_term - shorter_term)) * (term - shorter_term)) + shorter_rate
 
-    calculation_formula = f"(({longer_rate} - {shorter_rate}) / ({longer_term} - {shorter_term})) * ({term} - {shorter_term}) + {shorter_rate}"
+    # Convert Treasury terms to user-friendly labels for formula output
+    short_label = TREASURY_LABELS.get(term_mapping[shorter_term], term_mapping[shorter_term])
+    long_label = TREASURY_LABELS.get(term_mapping[longer_term], term_mapping[longer_term])
+
+    calculation_formula = f"(({longer_rate} - {shorter_rate}) / ({long_label} - {short_label})) * ({term} - {short_label}) + {shorter_rate}"
 
     return interpolated_rate, calculation_formula
 
@@ -133,14 +148,11 @@ def log_audit_entry(query_date, rate_date, term, lease_rate, calculation):
         "U.S. Treasury Table": f"https://home.treasury.gov/resource-center/data-chart-center/interest-rates/TextView?type=daily_treasury_yield_curve&field_tdr_date_value={rate_date[:4]}",
     }
 
-    # Check if audit_log.csv exists
     file_exists = os.path.isfile(AUDIT_LOG_FILE)
 
-    # Write to CSV
     with open(AUDIT_LOG_FILE, mode="a", newline="") as file:
         writer = csv.DictWriter(file, fieldnames=log_entry.keys())
 
-        # Write headers if file is newly created
         if not file_exists:
             writer.writeheader()
         writer.writerow(log_entry)
@@ -151,7 +163,6 @@ def get_lease_rate(date: str = Query(..., description="Lease date (YYYY-MM-DD)")
     recent_date, treasury_data = get_most_recent_date(date)
     lease_rate, calculation = get_lease_rate_for_term(treasury_data, term)
 
-    # Log API Call
     log_audit_entry(datetime.now().strftime("%Y-%m-%d"), recent_date, term, lease_rate, calculation)
 
     return {
