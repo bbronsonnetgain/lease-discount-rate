@@ -55,7 +55,7 @@ def load_cached_treasury_data():
                     print(f"✅ Cached Treasury Data Loaded ({len(data)} records)")
                 return data
         except json.JSONDecodeError:
-            print("⚠️ Cache file corrupted. Fetching fresh data...")
+            print(⚠️ Cache file corrupted. Fetching fresh data...")
             return None
     return {}
 
@@ -117,5 +117,29 @@ def get_lease_rate_for_term(treasury_data, term):
     if term in term_mapping and term_mapping[term] in available_terms:
         return available_terms[term_mapping[term]], f"Exact match for {TREASURY_LABELS[term_mapping[term]]}"
 
-    shorter_term = max([t for t in term_mapping.keys() if t < term and term_mapping[t] in available_terms], default=None)
-    longer_term = min([t for t in term_mapping.keys() if t > term and term_mapping[t] 
+    # Fixing unclosed bracket issue
+    shorter_term = max(
+        [t for t in term_mapping.keys() if t < term and term_mapping[t] in available_terms], 
+        default=None
+    )
+    
+    longer_term = min(
+        [t for t in term_mapping.keys() if t > term and term_mapping[t] in available_terms], 
+        default=None
+    )
+
+    if shorter_term and longer_term:
+        # Interpolating the rate
+        rate_short = available_terms[term_mapping[shorter_term]]
+        rate_long = available_terms[term_mapping[longer_term]]
+
+        interpolated_rate = rate_short + (rate_long - rate_short) * ((term - shorter_term) / (longer_term - shorter_term))
+        return interpolated_rate, f"Interpolated between {TREASURY_LABELS[term_mapping[shorter_term]]} and {TREASURY_LABELS[term_mapping[longer_term]]}"
+
+    if shorter_term:
+        return available_terms[term_mapping[shorter_term]], f"Closest match: {TREASURY_LABELS[term_mapping[shorter_term]]}"
+    if longer_term:
+        return available_terms[term_mapping[longer_term]], f"Closest match: {TREASURY_LABELS[term_mapping[longer_term]]}"
+
+    return None, "No suitable match found"
+
