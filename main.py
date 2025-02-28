@@ -29,7 +29,7 @@ def fetch_treasury_data():
         url = f"https://home.treasury.gov/resource-center/data-chart-center/interest-rates/pages/xmlview?data=daily_treasury_yield_curve&field_tdr_date_value={year}"
         response = requests.get(url)
         if response.status_code != 200:
-            print(f"❌ Failed to fetch data for {year}")
+            print(f"Failed to fetch data for {year}")
             continue
 
         soup = BeautifulSoup(response.content, "xml")
@@ -52,10 +52,10 @@ def load_cached_treasury_data():
             with open(CACHE_FILE, "r") as file:
                 data = json.load(file)
                 if data:
-                    print(f"✅ Cached Treasury Data Loaded ({len(data)} records)")
+                    print(f"Cached Treasury Data Loaded ({len(data)} records)")
                 return data
         except json.JSONDecodeError:
-            print(⚠️ Cache file corrupted. Fetching fresh data...")
+            print("Cache file corrupted. Fetching fresh data...")
             return None
     return {}
 
@@ -63,7 +63,7 @@ def load_cached_treasury_data():
 def update_treasury_cache():
     while True:
         try:
-            print("🔄 Updating Treasury Data...")
+            print("Updating Treasury Data...")
             cached_data = load_cached_treasury_data() or {}
             new_data = fetch_treasury_data()
 
@@ -71,12 +71,12 @@ def update_treasury_cache():
                 cached_data.update(new_data)
                 with open(CACHE_FILE, "w") as file:
                     json.dump(cached_data, file, indent=4)
-                print(f"✅ Treasury Data Updated: {datetime.today().strftime('%Y-%m-%d')}")
+                print(f"Treasury Data Updated: {datetime.today().strftime('%Y-%m-%d')}")
             else:
-                print("❌ Failed to update Treasury Data")
+                print("Failed to update Treasury Data")
 
         except Exception as e:
-            print(f"⚠️ Error in cache update: {e}")
+            print(f"Error in cache update: {e}")
 
         time.sleep(3600)  # Update every hour
 
@@ -90,7 +90,7 @@ def get_most_recent_date(requested_date: str):
     treasury_data = load_cached_treasury_data()
 
     if not treasury_data:
-        print("⚠️ No new data fetched. Using last known treasury rates.")
+        print("No new data fetched. Using last known treasury rates.")
         return max(treasury_data.keys()), treasury_data[max(treasury_data.keys())]
 
     req_date = datetime.strptime(requested_date, "%Y-%m-%d")
