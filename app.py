@@ -171,24 +171,11 @@ if st.button("Get Lease Rate"):
                     add_label_value("Lease Rate:", f"{lease_rate}%")
                     add_label_value("Date Query Was Ran:", query_date)
                     add_label_value("Interest Rate Date Used:", interest_rate_date)
-
-                    pdf.ln(5)  # Reduced space
-
-                    # **Fix for Rate Calculation Formula (Keep on Same Line)**
-                    pdf.set_font("Arial", style="B", size=12)
-                    pdf.cell(80, 8, "Rate Calculation Formula:", ln=False)
-                    pdf.set_font("Arial", size=10)
-                    pdf.multi_cell(0, 8, data["calculation"])  # Adjusted line height
-                    pdf.ln(3)  # Reduced extra space
-
-                    # **Fix for U.S. Treasury Data (Keep Link on Same Line)**
-                    pdf.set_font("Arial", style="B", size=12)
-                    pdf.cell(80, 8, "U.S. Treasury Data:", ln=False)
-
-                    # Hyperlink Styling (Same Line)
-                    pdf.set_font("Arial", size=10, style="U")  # Underline for link effect
+                    add_label_value("Rate Calculation Formula:", data["calculation"])  # Moved to standard format
+                    add_label_value("U.S. Treasury Data:", "Treasury Link")
                     pdf.set_text_color(0, 0, 255)  # Blue color for hyperlink
-                    pdf.cell(0, 8, "Treasury Link", ln=True, link=treasury_link)
+                    pdf.set_font("Arial", size=10, style="U")  # Underline for link effect
+                    pdf.cell(0, 8, "(Click Here)", ln=True, link=treasury_link)
 
                     return pdf.output(dest="S").encode("latin1")
 
@@ -202,6 +189,3 @@ if st.button("Get Lease Rate"):
 
     else:
         st.warning("Please enter both a date and lease term.")
-
-
-
