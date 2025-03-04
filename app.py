@@ -142,8 +142,10 @@ if st.button("Get Lease Rate"):
                     unsafe_allow_html=True,
                 )
 
-                # ✅ Export to PDF Button
+                # ✅ Export to PDF & XLSX Buttons
                 from fpdf import FPDF
+                import pandas as pd
+                import io
 
                 def generate_pdf():
                     pdf = FPDF()
@@ -165,7 +167,7 @@ if st.button("Get Lease Rate"):
                         pdf.set_font("Arial", size=12)
                         if link:
                             pdf.set_text_color(0, 0, 255)  # Blue color for hyperlink
-                            pdf.set_font("Arial", size=1, style="U")  # Underline for link effect
+                            pdf.set_font("Arial", size=12, style="U")  # Underline for link effect
                             pdf.cell(0, 8, value, ln=True, link=link)
                             pdf.set_text_color(0, 0, 0)  # Reset color to black
                         else:
@@ -181,9 +183,26 @@ if st.button("Get Lease Rate"):
                     add_label_value("U.S. Treasury Data:", "Treasury Link", link=treasury_link)
 
                     return pdf.output(dest="S").encode("latin1")
-
+                
+                def generate_xlsx():
+                    df = pd.DataFrame({
+                        "Field": ["Commencement Date", "Lease Term (Months)", "Lease Rate", "Date Query Was Ran", "Interest Rate Date Used", "Rate Calculation Formula", "U.S. Treasury Data"],
+                        "Value": [selected_date.strftime('%m/%d/%Y'), term, f"{lease_rate}%", query_date, interest_rate_date, data["calculation"], treasury_link]
+                    })
+                    output = io.BytesIO()
+                    with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+                        df.to_excel(writer, index=False, sheet_name='Lease Report')
+                    return output.getvalue()
+                
                 pdf_bytes = generate_pdf()
-                st.download_button(label="📄 Download Report as PDF", data=pdf_bytes, file_name="Lease_Report.pdf", mime="application/pdf")
+                xlsx_bytes = generate_xlsx()
+
+                # Display buttons with icons
+                col1, col2 = st.columns(2)
+                with col1:
+                    st.download_button("📄 Download PDF", data=pdf_bytes, file_name="Lease_Report.pdf", mime="application/pdf")
+                with col2:
+                    st.download_button("📊 Download XLSX", data=xlsx_bytes, file_name="Lease_Report.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
 
             else:
                 st.error("No lease rate found for the selected date and term.")
