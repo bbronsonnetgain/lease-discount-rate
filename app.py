@@ -212,7 +212,7 @@ if st.button("Get Lease Rate"):
                 xlsx_bytes = generate_xlsx()
 
                 # Display buttons with icons
-                col1, col2 = st.columns(2)
+                col1, col2 = st.columns([1, 0.8])
                 with col1:
                     st.markdown('<div class="pdf-button">', unsafe_allow_html=True)
                     st.download_button("📄 Download PDF", data=pdf_bytes, file_name="Lease_Report.pdf", mime="application/pdf")
