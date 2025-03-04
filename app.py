@@ -214,9 +214,13 @@ if st.button("Get Lease Rate"):
                 # Display buttons with icons
                 col1, col2 = st.columns(2)
                 with col1:
+                    st.markdown('<div class="pdf-button">', unsafe_allow_html=True)
                     st.download_button("📄 Download PDF", data=pdf_bytes, file_name="Lease_Report.pdf", mime="application/pdf")
+                    st.markdown('</div>', unsafe_allow_html=True)
                 with col2:
+                    st.markdown('<div class="xlsx-button">', unsafe_allow_html=True)
                     st.download_button("📊 Download XLSX", data=xlsx_bytes, file_name="Lease_Report.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+                    st.markdown('</div>', unsafe_allow_html=True)
 
             else:
                 st.error("No lease rate found for the selected date and term.")
