@@ -77,8 +77,22 @@ st.markdown(
         .result-box p {
             font-size: 18px !important;
             font-family: 'Poppins', sans-serif;
-        }
+         }
 
+        /* Button container styling */
+        .button-container {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+        }
+        .pdf-button button {
+            background-color: #d32f2f !important;
+            color: white !important;
+        }
+        .xlsx-button button {
+            background-color: #388e3c !important;
+            color: white !important;
+        }
     </style>
     """,
     unsafe_allow_html=True,
