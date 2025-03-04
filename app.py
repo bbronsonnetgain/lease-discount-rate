@@ -153,7 +153,7 @@ if st.button("Get Lease Rate"):
                     # Set title
                     pdf.set_font("Arial", style="B", size=18)
                     pdf.cell(200, 10, "Lease Rate Calculation Report", ln=True, align='C')
-                    pdf.ln(10)
+                    pdf.ln(8)  # Reduced space
 
                     # Set font for content
                     pdf.set_font("Arial", size=12)
@@ -161,9 +161,9 @@ if st.button("Get Lease Rate"):
                     # Function to add bold labels with values on the same line
                     def add_label_value(label, value):
                         pdf.set_font("Arial", style="B", size=12)
-                        pdf.cell(80, 10, label, ln=False)
+                        pdf.cell(80, 8, label, ln=False)
                         pdf.set_font("Arial", size=12)
-                        pdf.cell(0, 10, value, ln=True)
+                        pdf.cell(0, 8, value, ln=True)
 
                     # Standard Key-Value Pairs
                     add_label_value("Commencement Date:", selected_date.strftime('%m/%d/%Y'))
@@ -172,23 +172,23 @@ if st.button("Get Lease Rate"):
                     add_label_value("Date Query Was Ran:", query_date)
                     add_label_value("Interest Rate Date Used:", interest_rate_date)
 
-                    pdf.ln(5)
+                    pdf.ln(5)  # Reduced space
 
                     # **Fix for Rate Calculation Formula (Keep on Same Line)**
                     pdf.set_font("Arial", style="B", size=12)
-                    pdf.cell(80, 10, "Rate Calculation Formula:", ln=False)
+                    pdf.cell(80, 8, "Rate Calculation Formula:", ln=False)
                     pdf.set_font("Arial", size=10)
-                    pdf.multi_cell(0, 10, data["calculation"])  # Ensure multi-line wraps properly
-                    pdf.ln(5)
+                    pdf.multi_cell(0, 8, data["calculation"])  # Adjusted line height
+                    pdf.ln(3)  # Reduced extra space
 
                     # **Fix for U.S. Treasury Data (Keep Link on Same Line)**
                     pdf.set_font("Arial", style="B", size=12)
-                    pdf.cell(80, 10, "U.S. Treasury Data:", ln=False)
+                    pdf.cell(80, 8, "U.S. Treasury Data:", ln=False)
 
                     # Hyperlink Styling (Same Line)
                     pdf.set_font("Arial", size=10, style="U")  # Underline for link effect
                     pdf.set_text_color(0, 0, 255)  # Blue color for hyperlink
-                    pdf.cell(0, 10, "Treasury Link", ln=True, link=treasury_link)
+                    pdf.cell(0, 8, "Treasury Link", ln=True, link=treasury_link)
 
                     return pdf.output(dest="S").encode("latin1")
 
@@ -202,5 +202,6 @@ if st.button("Get Lease Rate"):
 
     else:
         st.warning("Please enter both a date and lease term.")
+
 
 
