@@ -143,33 +143,53 @@ if st.button("Get Lease Rate"):
                 )
 
                 # ✅ Export to PDF Button
+                from fpdf import FPDF
+
                 def generate_pdf():
                     pdf = FPDF()
                     pdf.set_auto_page_break(auto=True, margin=15)
                     pdf.add_page()
-                    pdf.set_font("Arial", style="B", size=16)
+
+                    # Set title
+                    pdf.set_font("Arial", style="B", size=18)
                     pdf.cell(200, 10, "Lease Rate Calculation Report", ln=True, align='C')
                     pdf.ln(10)
 
+                    # Set font for content
                     pdf.set_font("Arial", size=12)
-                    pdf.cell(200, 10, f"Commencement Date: {selected_date.strftime('%m/%d/%Y')}", ln=True)
-                    pdf.cell(200, 10, f"Lease Term (Months): {term}", ln=True)
-                    pdf.cell(200, 10, f"Lease Rate: {lease_rate}%", ln=True)
-                    pdf.cell(200, 10, f"Date Query Was Ran: {query_date}", ln=True)
-                    pdf.cell(200, 10, f"Interest Rate Date Used: {interest_rate_date}", ln=True)
+
+                    # Function to add bold labels
+                    def add_label_value(label, value):
+                        pdf.set_font("Arial", style="B", size=12)
+                        pdf.cell(80, 10, label, ln=False)
+                        pdf.set_font("Arial", size=12)
+                        pdf.cell(0, 10, value, ln=True)
+
+                    # Add input details
+                    add_label_value("Commencement Date:", selected_date.strftime('%m/%d/%Y'))
+                    add_label_value("Lease Term (Months):", str(term))
+                    add_label_value("Lease Rate:", f"{lease_rate}%")
+                    add_label_value("Date Query Was Ran:", query_date)
+                    add_label_value("Interest Rate Date Used:", interest_rate_date)
+                    
                     pdf.ln(5)
 
+                    # Add Rate Calculation Formula
                     pdf.set_font("Arial", style="B", size=12)
-                    pdf.cell(200, 10, "Rate Calculation Formula:", ln=True)
+                    pdf.cell(0, 10, "Rate Calculation Formula:", ln=True)
                     pdf.set_font("Arial", size=10)
                     pdf.multi_cell(0, 10, data["calculation"])
                     pdf.ln(5)
 
+                    # Treasury Data Link
                     pdf.set_font("Arial", style="B", size=12)
-                    pdf.cell(200, 10, "U.S. Treasury Data:", ln=True)
-                    pdf.set_font("Arial", size=10)
-                    pdf.cell(200, 10, treasury_link, ln=True, link=treasury_link)
+                    pdf.cell(0, 10, "U.S. Treasury Data:", ln=True)
 
+                    # Embed "Treasury Link" instead of full URL
+                    pdf.set_font("Arial", size=10, style="U")  # Underline for link effect
+                    pdf.set_text_color(0, 0, 255)  # Blue color for hyperlink
+                    pdf.cell(0, 10, "Treasury Link", ln=True, link=treasury_link)
+                    
                     return pdf.output(dest="S").encode("latin1")
 
                 pdf_bytes = generate_pdf()
@@ -182,3 +202,4 @@ if st.button("Get Lease Rate"):
 
     else:
         st.warning("Please enter both a date and lease term.")
+
