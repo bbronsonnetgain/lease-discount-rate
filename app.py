@@ -159,11 +159,17 @@ if st.button("Get Lease Rate"):
                     pdf.set_font("Arial", size=12)
 
                     # Function to add bold labels with values on the same line
-                    def add_label_value(label, value):
+                    def add_label_value(label, value, link=None):
                         pdf.set_font("Arial", style="B", size=12)
                         pdf.cell(80, 8, label, ln=False)
                         pdf.set_font("Arial", size=12)
-                        pdf.cell(0, 8, value, ln=True)
+                        if link:
+                            pdf.set_text_color(0, 0, 255)  # Blue color for hyperlink
+                            pdf.set_font("Arial", size=10, style="U")  # Underline for link effect
+                            pdf.cell(0, 8, value, ln=True, link=link)
+                            pdf.set_text_color(0, 0, 0)  # Reset color to black
+                        else:
+                            pdf.cell(0, 8, value, ln=True)
 
                     # Standard Key-Value Pairs
                     add_label_value("Commencement Date:", selected_date.strftime('%m/%d/%Y'))
@@ -172,10 +178,7 @@ if st.button("Get Lease Rate"):
                     add_label_value("Date Query Was Ran:", query_date)
                     add_label_value("Interest Rate Date Used:", interest_rate_date)
                     add_label_value("Rate Calculation Formula:", data["calculation"])  # Moved to standard format
-                    add_label_value("U.S. Treasury Data:", "Treasury Link")
-                    pdf.set_text_color(0, 0, 255)  # Blue color for hyperlink
-                    pdf.set_font("Arial", size=10, style="U")  # Underline for link effect
-                    pdf.cell(0, 8, "(Click Here)", ln=True, link=treasury_link)
+                    add_label_value("U.S. Treasury Data:", "Treasury Link", link=treasury_link)
 
                     return pdf.output(dest="S").encode("latin1")
 
