@@ -165,7 +165,7 @@ if st.button("Get Lease Rate"):
                         pdf.set_font("Arial", size=12)
                         if link:
                             pdf.set_text_color(0, 0, 255)  # Blue color for hyperlink
-                            pdf.set_font("Arial", size=10, style="U")  # Underline for link effect
+                            pdf.set_font("Arial", size=12, style="U")  # Underline for link effect
                             pdf.cell(0, 8, value, ln=True, link=link)
                             pdf.set_text_color(0, 0, 0)  # Reset color to black
                         else:
