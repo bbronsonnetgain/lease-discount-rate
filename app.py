@@ -142,8 +142,9 @@ if st.button("Get Lease Rate"):
                     unsafe_allow_html=True,
                 )
 
-                # ✅ Export to PDF Button
+                # ✅ Export buttons for PDF, XLS, DOC
                 from fpdf import FPDF
+                import pandas as pd
 
                 def generate_pdf():
                     pdf = FPDF()
@@ -153,7 +154,7 @@ if st.button("Get Lease Rate"):
                     # Set title
                     pdf.set_font("Arial", style="B", size=18)
                     pdf.cell(200, 10, "Lease Rate Calculation Report", ln=True, align='C')
-                    pdf.ln(8)  # Reduced space
+                    pdf.ln(8)
 
                     # Set font for content
                     pdf.set_font("Arial", size=12)
@@ -164,26 +165,55 @@ if st.button("Get Lease Rate"):
                         pdf.cell(80, 8, label, ln=False)
                         pdf.set_font("Arial", size=12)
                         if link:
-                            pdf.set_text_color(0, 0, 255)  # Blue color for hyperlink
-                            pdf.set_font("Arial", size=12, style="U")  # Underline for link effect
+                            pdf.set_text_color(0, 0, 255)
+                            pdf.set_font("Arial", size=10, style="U")
                             pdf.cell(0, 8, value, ln=True, link=link)
-                            pdf.set_text_color(0, 0, 0)  # Reset color to black
+                            pdf.set_text_color(0, 0, 0)
                         else:
                             pdf.cell(0, 8, value, ln=True)
 
-                    # Standard Key-Value Pairs
                     add_label_value("Commencement Date:", selected_date.strftime('%m/%d/%Y'))
                     add_label_value("Lease Term (Months):", str(term))
                     add_label_value("Lease Rate:", f"{lease_rate}%")
                     add_label_value("Date Query Was Ran:", query_date)
                     add_label_value("Interest Rate Date Used:", interest_rate_date)
-                    add_label_value("Rate Calculation Formula:", data["calculation"])  # Moved to standard format
+                    add_label_value("Rate Calculation Formula:", data["calculation"])  
                     add_label_value("U.S. Treasury Data:", "Treasury Link", link=treasury_link)
 
                     return pdf.output(dest="S").encode("latin1")
+                
+                def generate_xls():
+                    df = pd.DataFrame({
+                        "Field": ["Commencement Date", "Lease Term (Months)", "Lease Rate", "Date Query Was Ran", "Interest Rate Date Used", "Rate Calculation Formula", "U.S. Treasury Data"],
+                        "Value": [selected_date.strftime('%m/%d/%Y'), term, f"{lease_rate}%", query_date, interest_rate_date, data["calculation"], treasury_link]
+                    })
+                    return df.to_csv(index=False).encode("utf-8")
+                
+                def generate_doc():
+                    doc_content = f"""
+                    Lease Rate Calculation Report\n\n
+                    Commencement Date: {selected_date.strftime('%m/%d/%Y')}\n
+                    Lease Term (Months): {term}\n
+                    Lease Rate: {lease_rate}%\n
+                    Date Query Was Ran: {query_date}\n
+                    Interest Rate Date Used: {interest_rate_date}\n
+                    Rate Calculation Formula: {data["calculation"]}\n
+                    U.S. Treasury Data: {treasury_link}\n
+                    """.encode("utf-8")
+                    return doc_content
 
                 pdf_bytes = generate_pdf()
-                st.download_button(label="📄 Download Report as PDF", data=pdf_bytes, file_name="Lease_Report.pdf", mime="application/pdf")
+                xls_bytes = generate_xls()
+                doc_bytes = generate_doc()
+
+                # Display buttons with icons
+                col1, col2, col3 = st.columns(3)
+                with col1:
+                    st.download_button("📄 Download PDF", data=pdf_bytes, file_name="Lease_Report.pdf", mime="application/pdf")
+                with col2:
+                    st.download_button("📊 Download XLS", data=xls_bytes, file_name="Lease_Report.csv", mime="text/csv")
+                with col3:
+                    st.download_button("📄 Download DOC", data=doc_bytes, file_name="Lease_Report.doc", mime="application/msword")
 
             else:
                 st.error("No lease rate found for the selected date and term.")
