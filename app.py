@@ -2,6 +2,7 @@ import streamlit as st
 import requests
 import time
 from datetime import datetime
+from fpdf import FPDF
 
 # Hide top-right buttons & collapse sidebar
 st.set_page_config(
@@ -111,29 +112,27 @@ api_url = "https://lease-discount-rate.onrender.com/calculate"
 # Button to fetch lease rate
 if st.button("Get Lease Rate"):
     if selected_date and term:
-        # Display overlay spinner
         with st.spinner("Fetching lease rate..."):
             time.sleep(1)
 
-            # API request (formats date correctly)
+            # API request
             params = {"date": selected_date.strftime("%Y-%m-%d"), "term": term}
             response = requests.get(api_url, params=params)
 
-        # Display results
         if response.status_code == 200:
             data = response.json()
             if "lease_rate" in data:
                 lease_rate = round(data['lease_rate'], 3)
-                # Format dates to MM/DD/YYYY
+
                 query_date = datetime.now().strftime("%m/%d/%Y")
                 interest_rate_date = datetime.strptime(data["date"], "%Y-%m-%d").strftime("%m/%d/%Y")
                 treasury_link = f"https://home.treasury.gov/resource-center/data-chart-center/interest-rates/TextView?type=daily_treasury_yield_curve&field_tdr_date_value={data['date'][:4]}"
 
-                # Results Box
+                # Display results
                 st.markdown(
                     f"""
                     <div class="result-box">
-                        <p class="lease-rate">Lease Rate: {data['lease_rate']}%</p>
+                        <p class="lease-rate">Lease Rate: {lease_rate}%</p>
                         <p><b>Date Query Was Ran:</b> {query_date}</p>
                         <p><b>Interest Rate Date Used:</b> {interest_rate_date}</p>
                         <p><b>Rate Calculation Formula:</b> {data['calculation']}</p>
@@ -142,6 +141,40 @@ if st.button("Get Lease Rate"):
                     """,
                     unsafe_allow_html=True,
                 )
+
+                # ✅ Export to PDF Button
+                def generate_pdf():
+                    pdf = FPDF()
+                    pdf.set_auto_page_break(auto=True, margin=15)
+                    pdf.add_page()
+                    pdf.set_font("Arial", style="B", size=16)
+                    pdf.cell(200, 10, "Lease Rate Calculation Report", ln=True, align='C')
+                    pdf.ln(10)
+
+                    pdf.set_font("Arial", size=12)
+                    pdf.cell(200, 10, f"Commencement Date: {selected_date.strftime('%m/%d/%Y')}", ln=True)
+                    pdf.cell(200, 10, f"Lease Term (Months): {term}", ln=True)
+                    pdf.cell(200, 10, f"Lease Rate: {lease_rate}%", ln=True)
+                    pdf.cell(200, 10, f"Date Query Was Ran: {query_date}", ln=True)
+                    pdf.cell(200, 10, f"Interest Rate Date Used: {interest_rate_date}", ln=True)
+                    pdf.ln(5)
+
+                    pdf.set_font("Arial", style="B", size=12)
+                    pdf.cell(200, 10, "Rate Calculation Formula:", ln=True)
+                    pdf.set_font("Arial", size=10)
+                    pdf.multi_cell(0, 10, data["calculation"])
+                    pdf.ln(5)
+
+                    pdf.set_font("Arial", style="B", size=12)
+                    pdf.cell(200, 10, "U.S. Treasury Data:", ln=True)
+                    pdf.set_font("Arial", size=10)
+                    pdf.cell(200, 10, treasury_link, ln=True, link=treasury_link)
+
+                    return pdf.output(dest="S").encode("latin1")
+
+                pdf_bytes = generate_pdf()
+                st.download_button(label="📄 Download Report as PDF", data=pdf_bytes, file_name="Lease_Report.pdf", mime="application/pdf")
+
             else:
                 st.error("No lease rate found for the selected date and term.")
         else:
