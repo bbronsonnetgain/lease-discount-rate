@@ -3,8 +3,6 @@ import requests
 import time
 from datetime import datetime
 from fpdf import FPDF
-import pandas as pd
-import io
 
 # Hide top-right buttons & collapse sidebar
 st.set_page_config(
@@ -81,36 +79,19 @@ st.markdown(
             font-family: 'Poppins', sans-serif;
          }
 
-        /* Flexbox for Download Buttons */
+        /* Button container styling */
         .button-container {
             display: flex;
             gap: 15px;
-            justify-content: center;
             margin-top: 20px;
         }
         .pdf-button button {
-            background-color: #d32f2f !important; /* Adobe Red */
+            background-color: #d32f2f !important;
             color: white !important;
-            font-size: 16px;
-            padding: 10px 20px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
         }
         .xlsx-button button {
-            background-color: #388e3c !important; /* Excel Green */
+            background-color: #388e3c !important;
             color: white !important;
-            font-size: 16px;
-            padding: 10px 20px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-        .pdf-button button:hover {
-            background-color: #b71c1c !important;
-        }
-        .xlsx-button button:hover {
-            background-color: #2e7d32 !important;
         }
     </style>
     """,
@@ -176,61 +157,71 @@ if st.button("Get Lease Rate"):
                 )
 
                 # ✅ Export to PDF & XLSX Buttons
+                from fpdf import FPDF
+                import pandas as pd
+                import io
+
                 def generate_pdf():
                     pdf = FPDF()
                     pdf.set_auto_page_break(auto=True, margin=15)
                     pdf.add_page()
+
+                    # Set title
                     pdf.set_font("Arial", style="B", size=18)
                     pdf.cell(200, 10, "Lease Rate Calculation Report", ln=True, align='C')
-                    pdf.ln(8)
+                    pdf.ln(8)  # Reduced space
+
+                    # Set font for content
                     pdf.set_font("Arial", size=12)
 
-                    pdf.cell(80, 8, "Commencement Date:", ln=False)
-                    pdf.cell(0, 8, selected_date.strftime('%m/%d/%Y'), ln=True)
+                    # Function to add bold labels with values on the same line
+                    def add_label_value(label, value, link=None):
+                        pdf.set_font("Arial", style="B", size=12)
+                        pdf.cell(80, 8, label, ln=False)
+                        pdf.set_font("Arial", size=12)
+                        if link:
+                            pdf.set_text_color(0, 0, 255)  # Blue color for hyperlink
+                            pdf.set_font("Arial", size=12, style="U")  # Underline for link effect
+                            pdf.cell(0, 8, value, ln=True, link=link)
+                            pdf.set_text_color(0, 0, 0)  # Reset color to black
+                        else:
+                            pdf.cell(0, 8, value, ln=True)
 
-                    pdf.cell(80, 8, "Lease Term (Months):", ln=False)
-                    pdf.cell(0, 8, str(term), ln=True)
-
-                    pdf.cell(80, 8, "Lease Rate:", ln=False)
-                    pdf.cell(0, 8, f"{lease_rate}%", ln=True)
+                    # Standard Key-Value Pairs
+                    add_label_value("Commencement Date:", selected_date.strftime('%m/%d/%Y'))
+                    add_label_value("Lease Term (Months):", str(term))
+                    add_label_value("Lease Rate:", f"{lease_rate}%")
+                    add_label_value("Date Query Was Ran:", query_date)
+                    add_label_value("Interest Rate Date Used:", interest_rate_date)
+                    add_label_value("Rate Calculation Formula:", data["calculation"])  # Moved to standard format
+                    add_label_value("U.S. Treasury Data:", "Treasury Link", link=treasury_link)
 
                     return pdf.output(dest="S").encode("latin1")
-
+                
                 def generate_xlsx():
                     df = pd.DataFrame({
-                        "Field": ["Commencement Date", "Lease Term (Months)", "Lease Rate"],
-                        "Value": [selected_date.strftime('%m/%d/%Y'), term, f"{lease_rate}%"]
+                        "Field": ["Commencement Date", "Lease Term (Months)", "Lease Rate", "Date Query Was Ran", "Interest Rate Date Used", "Rate Calculation Formula", "U.S. Treasury Data"],
+                        "Value": [selected_date.strftime('%m/%d/%Y'), term, f"{lease_rate}%", query_date, interest_rate_date, data["calculation"], treasury_link]
                     })
                     output = io.BytesIO()
                     with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
                         df.to_excel(writer, index=False, sheet_name='Lease Report')
                     return output.getvalue()
-
+                
                 pdf_bytes = generate_pdf()
                 xlsx_bytes = generate_xlsx()
 
-                # Display buttons using Flexbox
-                st.markdown(
-                    """
-                    <div class="button-container">
-                        <div class="pdf-button">
-                            <button onclick="document.getElementById('pdf-download').click()">📄 Download PDF</button>
-                        </div>
-                        <div class="xlsx-button">
-                            <button onclick="document.getElementById('xlsx-download').click()">📊 Download XLSX</button>
-                        </div>
-                    </div>
-                    """,
-                    unsafe_allow_html=True
-                )
-
-                # Hidden Streamlit download buttons (triggered by Flexbox buttons)
-                st.download_button("📄 Download PDF", data=pdf_bytes, file_name="Lease_Report.pdf", mime="application/pdf", key="pdf-download")
-                st.download_button("📊 Download XLSX", data=xlsx_bytes, file_name="Lease_Report.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", key="xlsx-download")
+                # Display buttons with icons
+                col1, col2 = st.columns([1, 0.8])
+                with col1:
+                    st.markdown('<div class="pdf-button">', unsafe_allow_html=True)
+                    st.download_button("📄 Download PDF", data=pdf_bytes, file_name="Lease_Report.pdf", mime="application/pdf")
+                    st.markdown('</div>', unsafe_allow_html=True)
 
             else:
                 st.error("No lease rate found for the selected date and term.")
         else:
-            st.error("Error fetching lease rate.")
+            st.error("Error fetching lease rate. Make sure FastAPI is running!")
+
     else:
         st.warning("Please enter both a date and lease term.")
