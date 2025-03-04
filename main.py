@@ -30,7 +30,7 @@ def fetch_treasury_data():
         response = requests.get(url)
 
         if response.status_code != 200:
-            print(f"❌ Failed to fetch data for {year}")
+            print(f"Failed to fetch data for {year}")
             continue  
 
         soup = BeautifulSoup(response.content, "xml")
@@ -79,10 +79,10 @@ def update_treasury_cache():
             cached_data.update(new_data)
             with open(CACHE_FILE, "w") as file:
                 json.dump(cached_data, file)
-            print(f"✅ Treasury Data Updated: {datetime.today().strftime('%Y-%m-%d')}")
+            print(f"Treasury Data Updated: {datetime.today().strftime('%Y-%m-%d')}")
 
         else:
-            print("❌ Failed to update Treasury Data")
+            print("Failed to update Treasury Data")
 
         time.sleep(3600)  
 
