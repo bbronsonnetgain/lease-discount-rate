@@ -11,91 +11,6 @@ st.set_page_config(
     initial_sidebar_state="collapsed",
 )
 
-# Custom CSS for styling
-st.markdown(
-    """
-    <style>
-        /* Import Poppins Font */
-        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap');
-
-        /* Apply Poppins font globally */
-        html, body, [class*="st-"] {
-            font-family: 'Poppins', sans-serif;
-        }
-
-        /* Hide top-right Streamlit menu */
-        header { visibility: hidden; }
-
-        /* Hide "Manage App" button */
-        .stDeployButton { display: none !important; }
-
-        /* Style input labels */
-        label {
-            font-size: 18px !important;
-            font-weight: bold;
-            font-family: 'Poppins', sans-serif;
-        }
-
-        /* Style input fields */
-        div[data-baseweb="input"] {
-            text-align: left !important;
-        }
-
-        /* Style the Get Lease Rate button */
-        div.stButton > button {
-            background-color: #1E3A8A !important;
-            color: white !important;
-            font-size: 18px;
-            font-weight: bold;
-            padding: 8px 20px;
-            border-radius: 8px;
-            border: none;
-            font-family: 'Poppins', sans-serif;
-        }
-        div.stButton > button:hover {
-            background-color: #1E40AF !important;
-        }
-
-        /* Results box styling */
-        .result-box {
-            background-color: #f9f9f9;
-            padding: 15px;
-            border-radius: 8px;
-            border: 1px solid #ddd;
-            margin-top: 15px;
-        }
-
-        /* Lease Rate Styling - Changed to Black */
-        .lease-rate {
-            font-size: 22px;
-            font-weight: bold;
-            color: black !important;
-        }
-
-        /* Ensure all result text matches input labels */
-        .result-box p {
-            font-size: 18px !important;
-            font-family: 'Poppins', sans-serif;
-        }
-
-    </style>
-    """,
-    unsafe_allow_html=True,
-)
-
-# Custom CSS to Hide Bottom-Right Icons (Streamlit Branding)
-st.markdown(
-    """
-    <style>
-        /* Hide bottom-right icons */
-        .viewerBadge_container__1QSob { display: none !important; }
-        #MainMenu { visibility: hidden; }
-        footer { visibility: hidden; }
-    </style>
-    """,
-    unsafe_allow_html=True,
-)
-
 # Streamlit UI
 st.title("Lease Rate Calculator")
 
@@ -123,6 +38,8 @@ if st.button("Get Lease Rate"):
         if response.status_code == 200:
             data = response.json()
             if "lease_rate" in data:
+                lease_rate = round(data['lease_rate'], 3)
+
                 # Format dates to MM/DD/YYYY
                 query_date = datetime.now().strftime("%m/%d/%Y")
                 interest_rate_date = datetime.strptime(data["date"], "%Y-%m-%d").strftime("%m/%d/%Y")
@@ -132,7 +49,7 @@ if st.button("Get Lease Rate"):
                 st.markdown(
                     f"""
                     <div class="result-box">
-                        <p class="lease-rate">Lease Rate: {data['lease_rate']}%</p>
+                        <p class="lease-rate">Lease Rate: {lease_rate}%</p>
                         <p><b>Date Query Was Ran:</b> {query_date}</p>
                         <p><b>Interest Rate Date Used:</b> {interest_rate_date}</p>
                         <p><b>Rate Calculation Formula:</b> {data['calculation']}</p>

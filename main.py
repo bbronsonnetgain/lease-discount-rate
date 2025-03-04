@@ -153,6 +153,7 @@ def get_lease_rate_for_term(treasury_data, term):
 def get_lease_rate(date: str = Query(..., description="Lease date (YYYY-MM-DD)"), term: int = Query(..., description="Lease term in months")):
     recent_date, treasury_data = get_most_recent_date(date)
     lease_rate, calculation = get_lease_rate_for_term(treasury_data, term)
+    lease_rate = round(lease_rate, 3)
 
     return {
         "date": recent_date,
